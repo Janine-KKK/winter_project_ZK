@@ -1,0 +1,721 @@
+﻿<defaults >
+/ screencolor = (128,128,128) 
+</defaults>
+
+<values>
+	/num_trials = 30
+	/num_prac_trials = 3
+	/test = 0
+	/size = 25%//size of patches in peripheral areas
+	/Index = 0//trial index
+	/order = 0
+	/x_coordinate = 0//x coordinate of patches
+	/y_coordinate = 0//y coordinate of patches
+	/patch_ID = 0
+	/probe_Image = 0
+	/CongOrIncong = 0//whether test images in formal experiment are congruent or incongruent
+	/CongOrIncong_practice = 0//whether test images in practice are congruent or incongruent
+	/Patch_Source = 0//=1 if nishimoto, =2 if congruent, =3 if incongruent
+	/Patch_Position = 0
+	/center_size = 12.5%//size of patches in the center
+	/patch_size = 0//save the size of presented patch
+	/Image_ID = 0//ID of presented images
+	/order_question = 0//order of question within a trial
+	/catch_question = 0
+	/number_of_patch = 0//number of probes in each trial
+	/question_choose = 0//to generate a random number
+</values>
+
+
+*********************************************************************************************************************************
+*********************************************************************************************************************************
+													Formal Experiment
+*********************************************************************************************************************************
+*********************************************************************************************************************************
+<trial Fixation>
+	/ stimulusframes = [1 = cross]
+	/ timeout = 500
+	/ recorddata = false
+	/ branch = [
+		trial.image_presentation
+	]
+</trial>
+
+// fixation cross that branches to catch trials
+<trial Fixation_catch>
+	/ stimulusframes = [1 = cross]
+	/ timeout = 500
+	/ recorddata = false
+	/ branch = [
+		noreplace(trial.catch_presentation_absent,trial.catch_presentation_present)
+	]
+</trial>
+
+// catch trial counters for use when determining when to present a catch
+// randomised but distributed evenly throughout the experiment.
+<counter catch_trial_1>
+/ select = noreplace(1-5)
+/ selectionrate = experiment
+</counter>
+<counter catch_trial_2>
+/ select = noreplace(6-10)
+/ selectionrate = experiment
+</counter>
+<counter catch_trial_3>
+/ select = noreplace(11-15)
+/ selectionrate = experiment
+</counter>
+<counter catch_trial_4>
+/ select = noreplace(16-20)
+/ selectionrate = experiment
+</counter>
+<counter catch_trial_5>
+/ select = noreplace(21-25)
+/ selectionrate = experiment
+</counter>
+<counter catch_trial_6>
+/ select = noreplace(26-30)
+/ selectionrate = experiment
+</counter>
+
+
+<counter image_presentation_order>
+/ select = noreplace(1-30)
+</counter>
+
+<trial image_presentation>
+/ ontrialbegin = [
+	values.order = counter.image_presentation_order.selectedvalue;
+	picture.SquarePresent_present.insertitem(picture.SquarePresent.item(values.order),1);
+	trial.image_presentation.insertstimulusframe(picture.SquarePresent_present,1);
+]
+	/ stimulusframes = []
+	/ timeout = 133
+	/ recorddata = false
+	/ branch = [
+	trial.Masking_present
+]
+	/ ontrialend = [
+	picture.SquarePresent_present.clearitems();
+	trial.image_presentation.clearstimulusframes();
+	
+	values.order_question = 0;
+	values.response = 0;
+	values.p_confidence = 0;
+	values.patch_ID = 0;
+	values.Index += 1; 
+	if (item.CongOrIncong.item(values.order) == "Cong"){
+		values.CongOrIncong = 0;
+	}else if (item.CongOrIncong.item(values.order) == "Incong"){
+		values.CongOrIncong = 1;
+	}
+	values.Image_ID = item.Image_ID.item(values.order);
+]
+</trial>
+
+<trial Masking_present>
+	/ stimulustimes = [0 = Masking_picture_1; 60 = Masking_picture_2; 120 = Masking_picture_3;180 = Masking_picture_4; 240 = Masking_picture_5]
+	/ timeout = 300;
+	/ recorddata = false
+</trial>
+
+**********************************************Step 4: Patch Present Step********************************************************
+//randomize the presentation of patches
+<counter present>
+/ select = noreplace(1-12)
+</counter>
+
+<counter absent>
+/ select = noreplace(1-12)
+</counter>
+
+<counter question_choose>
+/ select = noreplace(1-8)
+</counter>
+*********************************************************************************************************************************
+*********************************************************************************************************************************
+
+<trial fixiation_2nd>
+	/ stimulusframes = [1 = cross]
+	/ timeout = 500
+	/ recorddata = false
+	/ ontrialend = [
+	values.number_of_patch = 8;
+]
+	/ branch = [
+	trial.Patch_present;
+]
+</trial>
+
+<trial Patch_present>
+	/ ontrialbegin = [
+	values.response = 0;
+	values.p_confidence = 0;
+	values.question_choose = counter.question_choose.selectedvalue;
+	if(values.question_choose == 1 || values.question_choose ==2){
+		if(counter.present.selectedvalue == 1){
+		
+			trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_1_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_1;
+			values.y_coordinate = values.location_vertical_1;
+			values.patch_size = values.size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}
+			values.Patch_Position = 1;
+			
+		}else if(counter.present.selectedvalue == 2){
+		    trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_2_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_2;
+			values.y_coordinate = values.location_vertical_1;
+			values.patch_size = values.size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}		
+			values.Patch_Position = 2;		
+			
+		}else if(counter.present.selectedvalue == 3){
+		    trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_3_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_3;
+			values.y_coordinate = values.location_vertical_1;
+			values.patch_size = values.size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}
+			values.Patch_Position = 3;
+			
+		}else if(counter.present.selectedvalue == 4){
+		    trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_4_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_1;
+			values.y_coordinate = values.location_vertical_2;
+			values.patch_size = values.size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}
+			values.Patch_Position = 4;	
+			
+		}else if(counter.present.selectedvalue == 5){
+		    trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_5_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_3;
+			values.y_coordinate = values.location_vertical_2;
+			values.patch_size = values.size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}
+			values.Patch_Position = 5;	
+			
+		}else if(counter.present.selectedvalue == 6){
+		    trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_6_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_1;
+			values.y_coordinate = values.location_vertical_3;
+			values.patch_size = values.size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}
+			values.Patch_Position = 6;			
+			
+		}else if(counter.present.selectedvalue == 7){
+		    trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_7_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_2;
+			values.y_coordinate = values.location_vertical_3;
+			values.patch_size = values.size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}
+			values.Patch_Position = 7;		
+			
+		}else if(counter.present.selectedvalue == 8){
+			trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_8_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_3;
+			values.y_coordinate = values.location_vertical_3;
+			values.patch_size = values.size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}
+			values.Patch_Position = 8;			
+		}
+	}else if(values.question_choose == 3||values.question_choose == 4){	
+	if(counter.present.selectedvalue == 9){
+			trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_9_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_4;
+			values.y_coordinate = values.location_vertical_4;
+			values.patch_size = values.center_size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}
+			values.Patch_Position = 9;
+			
+		}else if(counter.present.selectedvalue == 10){
+			trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_10_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_5;
+			values.y_coordinate = values.location_vertical_4;
+			values.patch_size = values.center_size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}		
+			values.Patch_Position = 10;		
+			
+		}else if(counter.present.selectedvalue == 11){
+			trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_11_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_4;
+			values.y_coordinate = values.location_vertical_5;
+			values.patch_size = values.center_size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}
+			values.Patch_Position = 11;
+			
+		}else if(counter.present.selectedvalue == 12){
+			trial.Patch_present.insertstimulusframe(text.cross,1);
+			picture.Present_image_patch_step.insertitem(picture.SquarePresent.item(values.order),1);
+			trial.Patch_present.insertstimulusframe(picture.Present_image_patch_step,1);
+			trial.Patch_present.insertstimulusframe(picture.Patch_locate_12_present,1);
+			values.patch_ID += 1;
+			values.x_coordinate = values.location_horizontal_5;
+			values.y_coordinate = values.location_vertical_5;
+			values.patch_size = values.center_size;
+			if(item.CongOrIncong.item(values.order) == "Cong"){
+				values.Patch_Source = 2;
+			}else if(item.CongOrIncong.item(values.order) == "Incong"){
+				values.Patch_Source = 3;
+			}
+			values.Patch_Position = 12;	
+
+	}else if(values.question_choose == 5||values.question_choose == 6){
+		if(counter.absent.selectedvalue == 1){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+		    trial.Patch_present.insertstimulusframe(picture.nPatch_locate_1_resource,2);
+			values.x_coordinate = values.location_horizontal_1;
+			values.y_coordinate = values.location_vertical_1;
+			values.patch_size = values.size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 1;			
+		}else if(counter.absent.selectedvalue == 2){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+			trial.Patch_present.insertstimulusframe(picture.nPatch_locate_2_resource, 2);
+			values.x_coordinate = values.location_horizontal_2;
+			values.y_coordinate = values.location_vertical_1;
+			values.patch_size = values.size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 2;			
+		}else if(counter.absent.selectedvalue == 3){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+			trial.Patch_present.insertstimulusframe(picture.nPatch_locate_3_resource, 2);
+			values.x_coordinate = values.location_horizontal_3;
+			values.y_coordinate = values.location_vertical_1;
+			values.patch_size = values.size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 3;			
+		}else if(counter.absent.selectedvalue == 4){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+			trial.Patch_present.insertstimulusframe(picture.nPatch_locate_4_resource, 2);
+			values.x_coordinate = values.location_horizontal_1;
+			values.y_coordinate = values.location_vertical_2;
+			values.patch_size = values.size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 4;			
+		}else if(counter.absent.selectedvalue == 5){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+			trial.Patch_present.insertstimulusframe(picture.nPatch_locate_5_resource, 2);
+			values.x_coordinate = values.location_horizontal_3;
+			values.y_coordinate = values.location_vertical_2;
+			values.patch_size = values.size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 5;			
+		}else if(counter.absent.selectedvalue == 6){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+			trial.Patch_present.insertstimulusframe(picture.nPatch_locate_6_resource, 2);
+			values.x_coordinate = values.location_horizontal_1;
+			values.y_coordinate = values.location_vertical_3;
+			values.patch_size = values.size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 6;			
+		}else if(counter.absent.selectedvalue == 7){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+			trial.Patch_present.insertstimulusframe(picture.nPatch_locate_7_resource, 2);
+			values.x_coordinate = values.location_horizontal_2;
+			values.y_coordinate = values.location_vertical_3;
+			values.patch_size = values.size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 7;			
+		}else if(counter.absent.selectedvalue == 8){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+			trial.Patch_present.insertstimulusframe(picture.nPatch_locate_8_resource, 2);
+			values.x_coordinate = values.location_horizontal_3;
+			values.y_coordinate = values.location_vertical_3;
+			values.patch_size = values.size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 8;				
+		}
+		
+		}else{
+		if(counter.absent.selectedvalue == 9){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+		    trial.Patch_present.insertstimulusframe(picture.nPatch_locate_9_resource,2);
+			values.x_coordinate = values.location_horizontal_4;
+			values.y_coordinate = values.location_vertical_4;
+			values.patch_size = values.center_size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 9;			
+		}else if(counter.absent.selectedvalue == 10){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+			trial.Patch_present.insertstimulusframe(picture.nPatch_locate_10_resource, 2);
+			values.x_coordinate = values.location_horizontal_5;
+			values.y_coordinate = values.location_vertical_4;
+			values.patch_size = values.center_size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 10;			
+		}else if(counter.absent.selectedvalue == 11){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+			trial.Patch_present.insertstimulusframe(picture.nPatch_locate_11_resource, 2);
+			values.x_coordinate = values.location_horizontal_4;
+			values.y_coordinate = values.location_vertical_5;
+			values.patch_size = values.center_size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 11;			
+		}else if(counter.absent.selectedvalue == 12){
+			trial.Patch_present.insertstimulusframe(text.cross, 1);
+			trial.Patch_present.insertstimulusframe(picture.nPatch_locate_12_resource, 2);
+			values.x_coordinate = values.location_horizontal_5;
+			values.y_coordinate = values.location_vertical_5;
+			values.patch_size = values.center_size;
+			values.patch_ID += 1;
+			values.Patch_Source = 1;
+			values.Patch_Position = 12;
+ 			}
+	    }	
+	}
+]
+
+	/ stimulusframes = []
+	/ timeout = 133
+	/ recorddata = false
+	/ ontrialend = [
+	trial.Patch_present.clearstimulusframes();
+	picture.Present_image_patch_step.clearitems();
+
+]
+//add conditioning branches to mask patches of different sizes	
+	/ branch = [
+		if(values.patch_size==25%)
+	    trial.mask_periphery]
+	/ branch = [
+	    if(values.patch_size==12.5%)
+		trial.mask_center]
+
+</trial>
+]
+		
+		
+
+</trial>
+		}
+]
+</trial>
+
+******************************************************************************************************************************************************************************************************
+******************************************************************************************************************************************************************************************************
+Trial for masking on the patches
+<trial mask_periphery>
+	/ stimulustimes = [0 = cross,Masking_periphery_1;60 = cross,Masking_periphery_2;120 = cross,Masking_periphery_3;180 = cross,Masking_periphery_4;240 = cross,Masking_periphery_5]
+	/ timeout = 300
+	/ recorddata = false
+	/ branch = [
+	trial.peripheral_response
+]
+</trial>
+
+<trial mask_center>
+	/ stimulustimes = [0 = cross,Masking_center_1;60 = cross,Masking_center_2;120 = cross,Masking_center_3;180 = cross,Masking_center_4;240 = cross,Masking_center_5]
+	/ timeout = 300
+	/ recorddata = false
+	/ branch = [
+	trial.peripheral_response
+]
+</trial>
+
+******************************************************Step 5: catch trials********************************************************
+// Catch presentation for item.catch_present_words
+// catch question from the list of catch words will be assigned using a random number allocated at ontrialbegin
+<trial catch_presentation_present>
+	/ ontrialbegin = [
+		values.catch_question = round(rand(1, 4))
+	]
+	/ stimulusframes = [
+		1 = list.catch_present_presentation_words;
+		]
+	/ timeout = 433
+	/ recorddata = false
+	/ branch = [
+			trial.catch_present_trial
+		]
+</trial>
+
+// Catch presentation for item.catch_absent_words
+// catch question from the list of catch words will be assigned using a random number allocated at ontrialbegin
+<trial catch_presentation_absent>
+	/ ontrialbegin = [
+		values.catch_question = round(rand(1, 4))
+	]
+	/ stimulusframes = [
+		1 = list.catch_absent_presentation_words;
+		]
+	/ timeout = 433
+	/ recorddata = false
+	/ branch = [
+			trial.catch_absent_trial
+		]
+</trial>
+
+// Catch Response for item.catch_present_words
+// catch question from the list of catch words will be the same as the one used above in catch presentation
+<trial catch_present_trial>
+/ stimulusframes = [
+	1 = response1d, response2d, response3d, response4d, response5d, response6d, response7d, response8d, response_blank,
+lowC_instruction, highC_instruction,part_of_Image,Not_part_of_Image,catch_response_instructions;
+	2 = list.catch_present_words;
+	]
+/ inputdevice = mouse
+/ validresponse = (response_blank, response1d, response2d, response3d, response4d, response5d, response6d, response7d, response8d)
+/ correctresponse=(response1d, response2d, response3d, response4d)
+/ recorddata = true
+/ branch = [
+	trial.centermouse
+]
+</trial>
+
+// Catch presentation for item.catch_absent_words
+// catch question from the list of catch words will be the same as the one used above in catch presentation
+<trial catch_absent_trial>
+/ stimulusframes = [
+	1 = response1d, response2d, response3d, response4d, response5d, response6d, response7d, response8d, response_blank,
+lowC_instruction, highC_instruction,part_of_Image,Not_part_of_Image,catch_response_instructions;
+	2 = list.catch_absent_words;
+	]
+/ inputdevice = mouse
+/ validresponse = (response_blank, response1d, response2d, response3d, response4d, response5d, response6d, response7d, response8d)
+/ correctresponse=(response5d, response6d, response7d, response8d)
+/ recorddata = true
+/ branch = [
+	trial.centermouse
+]
+</trial>
+
+
+******************************************************************************************************************************************************************************************************
+******************************************************************************************************************************************************************************************************
+
+<trial peripheral_response>
+/ ontrialbegin = [
+	values.order_question += 1;
+]
+/ stimulusframes = [
+	1  = response1d, response2d, response3d, response4d, response5d, response6d, response7d, response8d, response_blank,
+lowC_instruction, highC_instruction,part_of_Image,Not_part_of_Image,p_response_instructions
+]
+/ validresponse = (response_blank, response1d, response2d, response3d, response4d, response5d, response6d, response7d, response8d)
+/ inputdevice = mouse
+/ isvalidresponse = [if (trial.peripheral_response.response == "response_blank") false; else
+expressions.validresponse_disks
+]
+/ recorddata = true
+/ branch = [
+	trial.centermouse
+]
+</trial>
+
+<trial centermouse>
+/ stimulusframes = [1  = response1d, response2d, response3d, response4d, response5d, response6d, response7d, response8d, response_blank,
+lowC_instruction, highC_instruction,part_of_Image,Not_part_of_Image,centersquare,notice_centre_mouse,process_notice]
+/ inputdevice = mouse
+/ recorddata = false
+/ validresponse = (centersquare)
+</trial>
+
+
+******************************************************************************************************************************************************************************************************
+******************************************************************************************************************************************************************************************************
+<trial interval_message>
+/ stimulusframes = [1 = interval,quit_notice,Next_button]
+/ validresponse = (57)
+/ recorddata = false
+</trial>
+
+
+**************************************************
+		catch trials (items and lists)
+**************************************************
+
+<item catch_present_words>
+/ 1 = "CLICK: Yes 1"
+/ 2 = "CLICK: Yes 2"
+/ 3 = "CLICK: Yes 3"
+/ 4 = "CLICK: Yes 4"
+</item>
+<item catch_absent_words>
+/ 1 = "CLICK: No 1"
+/ 2 = "CLICK: No 2"
+/ 3 = "CLICK: No 3"
+/ 4 = "CLICK: No 4"
+</item>
+
+// Lists used for the catch presentation
+<list catch_present_presentation_words>
+/ items = (text.catch_present_presentation)
+/ selectionrate = always
+</list>
+
+<list catch_absent_presentation_words>
+/ items = (text.catch_absent_presentation)
+/ selectionrate = always
+</list>
+
+// Lists used for the catch response
+<list catch_present_words>
+/ items = (text.catch_present)
+/ selectionrate = always
+</list>
+
+<list catch_absent_words>
+/ items = (text.catch_absent)
+/ selectionrate = always
+</list>
+
+
+
+*****************************************
+// Normal test, 1 image presentation with 6 patch presentations 
+<block test>
+	/ trials = [1 = trial.Fixation; 2-9 = trial.fixiation_2nd;10 = interval_message]
+</block>
+
+// Catch test, 1 image presentation with 6 patch presentations, with a catch trial at the end
+<block test_with_catch>
+	/ trials = [1 = trial.Fixation; 2-9 = trial.fixiation_2nd;10 = trial.Fixation_catch; 11 = interval_message]
+</block>
+
+// Used to determine which type of test block will be shown throughout the experiment, depending on the assigned catch_trial number and current Index.
+<list test_select>
+/ items = (block.test, block.test_with_catch)
+/ selectionrate = always
+/ selectionmode = 	
+	if (values.Index == counter.catch_trial_1.currentitem || values.Index == counter.catch_trial_2.currentitem ||values.Index == counter.catch_trial_3.currentitem){
+		2;
+	}
+	else {
+		1;
+	}
+</list>
+
+
+<expt Throughout>
+/ preinstructions = (start)
+/ postinstructions = (end)
+/ blocks = [1 = Instruction;
+2 = calibration;
+3 = test_prac;
+4 = attention1;
+5 = test_prac;
+6 = attention1;
+7 = test_prac;
+8 = attention2;
+9-38 = list.test_select]
+</expt>
+
+<data>
+/ columns=[subject,values.Index,values.patch_ID,values.CongOrIncong,values.CongOrIncong_practice,values.Patch_Source,values.Patch_Position,values.patch_size
+			values.response,values.p_confidence,latency,values.Image_ID,values.catch_question]
+/ separatefiles = true
+</data>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
